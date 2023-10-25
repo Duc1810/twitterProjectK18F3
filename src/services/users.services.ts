@@ -29,7 +29,7 @@ class UsersService {
       this.signAccessToken(user_id),
       this.signRefreshToken(user_id)
     ])
-    return result
+    return [access_token, refresh_token]
   }
   signAccessToken(user_id: string) {
     return signToken({
