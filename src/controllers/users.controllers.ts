@@ -5,15 +5,21 @@ import databaService from '~/services/database.services'
 import usersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 import { RegisterReqBody } from '~/models/requests/User.request'
+import { ErrorWithStatus } from '~/models/Errors'
+import { ObjectId } from 'mongodb'
+import { USERS_MESSAGES } from '~/constants/messages'
+
+//biết có user nên để as User
 export const loginController = async (req: Request, res: Response) => {
   //nếu nó vào được đậy, tức là đã đưa email password đúng
   //server tạo ra accessToken và refresh_token để đưa client
-  const { user }: any = req
-  const user_id = user._id //objectId
+  const user = req.user as User
+  const user_id = user._id as ObjectId
+  //vì khi tạo server tự tạo objectid nên định nghĩa bắt buộc phải có
   //server phải tọa ra access_token và refresh_token để đưa cho client
   const result = await usersService.login(user_id.toString())
   return res.json({
-    messge: 'Login successfully',
+    messge: USERS_MESSAGES.LOGIN_SUSSCESS,
     result
   })
 }
@@ -22,7 +28,7 @@ export const registerController = async (req: Request<ParamsDictionary, any, Reg
   const { email, password, name, date_of_birth } = req.body
   const result = await usersService.register(req.body)
   return res.json({
-    message: 'Register successfully',
+    message: USERS_MESSAGES.REGISTER_SUCCESS,
     result
   })
 }

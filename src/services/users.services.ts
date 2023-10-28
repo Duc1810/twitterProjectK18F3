@@ -6,6 +6,8 @@ import { hashPassword } from '~/utils/crypto'
 import { signToken } from '~/utils/jwt'
 import { TokenType } from '~/constants/enums'
 import { config } from 'dotenv'
+import RefreshToken from '~/models/schemas/RefreshToken.schemas'
+import { ObjectId } from 'mongodb'
 config()
 class UsersService {
   //viết hàm nhận vào user id để bỏ vào payload tọa access token
@@ -25,12 +27,26 @@ class UsersService {
       })
     )
     const user_id = result.insertedId.toString()
-    //lấy ra id
+    //lấy ra id dùng isertedId
     const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken(user_id)
+    //lưu refresh_token vào database
+    await databaService.refreshTokens.insertOne(
+      new RefreshToken({
+        token: refresh_token,
+        user_id: new ObjectId(user_id)
+      })
+    )
     return [access_token, refresh_token]
   }
   async login(user_id: string) {
     const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken(user_id)
+    //lưu refresh_token vào database
+    await databaService.refreshTokens.insertOne(
+      new RefreshToken({
+        token: refresh_token,
+        user_id: new ObjectId(user_id)
+      })
+    )
     return [access_token, refresh_token]
   }
 
