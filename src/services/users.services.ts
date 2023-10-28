@@ -11,7 +11,7 @@ class UsersService {
   //viết hàm nhận vào user id để bỏ vào payload tọa access token
 
   //viết hàm nhận vào user id để bỏ vào payload tọa refresh token
-
+  //chơi với server là luôn dùng await để đợi truy suất dữ liệu
   async checkEmailExit(email: string) {
     const user = await databaService.users.findOne({ email })
     return Boolean(user)
@@ -25,6 +25,7 @@ class UsersService {
       })
     )
     const user_id = result.insertedId.toString()
+    //lấy ra id
     const [access_token, refresh_token] = await this.signAccessTokenAndRefreshToken(user_id)
     return [access_token, refresh_token]
   }

@@ -120,15 +120,6 @@ export const registerValidator = validate(
           // true : return về chất lượng password(trên thang điểm 10)
         },
         errorMessage: USERS_MESSAGES.PASSWORD_MUST_BE_STRONG
-      },
-
-      custom: {
-        options: (value, { req }) => {
-          if (value !== req.body.password) {
-            throw new Error(USERS_MESSAGES.EMAIL_OR_PASSWORD_IS_INCORRECT)
-          }
-          return true
-        }
       }
     },
     confirm_password: {
@@ -154,6 +145,14 @@ export const registerValidator = validate(
           minSymbols: 1
         },
         errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_STRONG
+      },
+      custom: {
+        options: (value, { req }) => {
+          if (value !== req.body.password) {
+            throw new Error(USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD)
+          }
+          return true
+        }
       }
     },
     date_of_birth: {
