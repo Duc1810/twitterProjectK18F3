@@ -4,13 +4,13 @@ import usersRouter from '~/routes/users.routes'
 import databaService from '~/services/database.services'
 import usersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
-import { RegisterReqBody } from '~/models/requests/User.request'
+import { LoginReqBody, LogoutReqBody, RegisterReqBody } from '~/models/requests/User.request'
 import { ErrorWithStatus } from '~/models/Errors'
 import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/messages'
 
 //biết có user nên để as User
-export const loginController = async (req: Request, res: Response) => {
+export const loginController = async (req: Request<ParamsDictionary, any, LoginReqBody>, res: Response) => {
   //nếu nó vào được đậy, tức là đã đưa email password đúng
   //server tạo ra accessToken và refresh_token để đưa client
   const user = req.user as User
@@ -34,3 +34,13 @@ export const registerController = async (req: Request<ParamsDictionary, any, Reg
 }
 //nên bắt try catch vì chơi với database dễ bị lỗi
 //hàm aysnc mới dùng wrapAysnc
+
+export const logoutController = async (req: Request<ParamsDictionary, any, LogoutReqBody>, res: Response) => {
+  //lấy refresh_token từ req.body
+  const { refresh_token } = req.body
+  //và vào database chỉ có xóa refresh_token này
+  //logout vào database xóa refresh_token
+  const result = await usersService.logout(refresh_token)
+  //nếu có thì xóa
+  res.json(result)
+}

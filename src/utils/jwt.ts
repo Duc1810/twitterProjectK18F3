@@ -1,6 +1,7 @@
-import { rejects } from 'assert'
-import Jwt from 'jsonwebtoken'
+import jwt from 'jsonwebtoken'
 import { config } from 'dotenv'
+import { TokenPayLoad } from '~/models/requests/User.request'
+
 config()
 export const signToken = ({
   payload,
@@ -9,13 +10,28 @@ export const signToken = ({
 }: {
   payload: string | object | Buffer
   privateKey?: string
-  options?: Jwt.SignOptions
+  options?: jwt.SignOptions
 }) => {
   return new Promise<string>((resolve, reject) => {
-    Jwt.sign(payload, privateKey, options, (err, token) => {
+    jwt.sign(payload, privateKey, options, (err, token) => {
       if (err) reject(err)
       resolve(token as string)
     })
   })
 }
 //reject vì server sài
+
+export const verifyToken = ({
+  token,
+  secretOrPublicKey = process.env.JWT_SECRET as string
+}: {
+  token: string
+  secretOrPublicKey?: string
+}) => {
+  return new Promise<TokenPayLoad>((resolve, reject) => {
+    jwt.verify(token, secretOrPublicKey, (err, decoded) => {
+      if (err) throw reject(err)
+      resolve(decoded as TokenPayLoad)
+    })
+  })
+}
