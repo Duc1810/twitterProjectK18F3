@@ -9,6 +9,8 @@ import { config } from 'dotenv'
 import RefreshToken from '~/models/schemas/RefreshToken.schemas'
 import { ObjectId } from 'mongodb'
 import { USERS_MESSAGES } from '~/constants/messages'
+import { ErrorWithStatus } from '~/models/Errors'
+import HTTP_STATUS from '~/constants/httpStatus'
 config()
 class UsersService {
   //viết hàm nhận vào user id để bỏ vào payload tọa access token
@@ -170,6 +172,45 @@ class UsersService {
       message: USERS_MESSAGES.CHECK_EMAIL_TORESET_PASSWORD
     }
   }
+  async resetPassword({ user_id, password }: { user_id: string; password: string }) {
+    //dựa vào user_id và tìm và cập nhật
+    await databaService.users.updateOne(
+      {
+        _id: new ObjectId(user_id)
+      },
+      [
+        {
+          $set: {
+            password: hashPassword(password),
+            forgot_password_token: '',
+            updated_at: '$$NOW'
+          }
+        }
+      ]
+    )
+    return { message: USERS_MESSAGES.RESET_PASSWORD_SUCCESS }
+  }
+  async getMe(user_id: string) {
+    const user = await databaService.users.findOne(
+      { _id: new ObjectId(user_id) },
+      {
+        //hàm này để ẩn đi thông tin
+        projection: {
+          password: 0,
+          email_verify_token: 0,
+          forgot_password_token: 0
+        }
+      }
+    )
+    if (!user) {
+      throw new ErrorWithStatus({
+        message: USERS_MESSAGES.USER_NOT_FOUND,
+        status: HTTP_STATUS.NOT_FOUND
+      })
+    }
+    return user // sẽ k có những thuộc tính nêu trên, tránh bị lộ thông tin
+  }
 }
+
 const usersService = new UsersService()
 export default usersService
