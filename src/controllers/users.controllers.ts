@@ -162,3 +162,13 @@ export const updateMeController = async (req: Request<ParamsDictionary, any, Upd
     result
   })
 }
+export const getProfileController = async (req: Request<ParamsDictionary, any, GetProfileReqParams>, res: Response) => {
+  //muốn lấy thông tin của user thì cần username
+  const { username } = req.params
+  //tiến hành vòa databsse tìm và lấy thông tin user
+  const user = await usersService.getProfile(username)
+  return res.json({
+    message: USERS_MESSAGES.GET_PROFILE_SUCCESS,
+    result: user
+  })
+}
