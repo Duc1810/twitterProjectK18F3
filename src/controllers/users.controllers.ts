@@ -9,7 +9,8 @@ import {
   LogoutReqBody,
   RegisterReqBody,
   ResetPasswordReqBody,
-  TokenPayLoad
+  TokenPayLoad,
+  UpdateMeReqBody
 } from '~/models/requests/User.request'
 import { ErrorWithStatus } from '~/models/Errors'
 import { ObjectId } from 'mongodb'
@@ -26,7 +27,7 @@ export const loginController = async (req: Request<ParamsDictionary, any, LoginR
   //vì khi tạo server tự tạo objectid nên định nghĩa bắt buộc phải có
   //server phải tọa ra access_token và refresh_token để đưa cho client
   //.toString để nó biết là kiẻu dữ liệu đưa lên là string nếu không là ObjectId
-  const result = await usersService.login(user_id.toString())
+  const result = await usersService.login({ user_id: user_id.toString(), verify: user.verify })
   return res.json({
     messge: USERS_MESSAGES.LOGIN_SUSSCESS,
     result
@@ -118,8 +119,8 @@ export const resendEmailVerifyController = async (req: Request, res: Response) =
   return res.json(result)
 }
 export const forgotpasswordController = async (req: Request, res: Response) => {
-  const { _id } = req.user as User
-  const result = await usersService.forgotPassword((_id as ObjectId).toString())
+  const { _id, verify } = req.user as User
+  const result = await usersService.forgotPassword({ user_id: (_id as ObjectId).toString(), verify })
   return res.json(result)
   //lấy user id từ req.user
   //tiến hành update lại forgot_password_token
@@ -148,5 +149,16 @@ export const getMeController = async (req: Request, res: Response) => {
   return res.json({
     message: USERS_MESSAGES.GET_ME_SUCCESS,
     reusult: user
+  })
+}
+export const updateMeController = async (req: Request<ParamsDictionary, any, UpdateMeReqBody>, res: Response) => {
+  //muốn update thông tin cảu user thì cần user_id, và những thông tin ngta muốn update
+  const { user_id } = req.decoded_authorization as TokenPayLoad
+  const { body } = req
+  //giờ mình sẽ update user thông qua user_id này với bođy đucợ cho
+  const result = await usersService.updateMe(user_id, body)
+  return res.json({
+    message: USERS_MESSAGES.UPDATE_ME_SUCCESS,
+    result
   })
 }
