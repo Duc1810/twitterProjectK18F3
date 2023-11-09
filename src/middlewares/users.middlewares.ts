@@ -70,17 +70,16 @@ const confirmPasswordSchema: ParamSchema = {
       minSymbols: 1
     },
     errorMessage: USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_STRONG
+  },
+  custom: {
+    options: (value, { req }) => {
+      if (value !== req.body.password) {
+        throw new Error(USERS_MESSAGES.CONFIRM_PASSWORD_MUST_BE_THE_SAME_AS_PASSWORD)
+      }
+      return true
+    }
   }
 }
-export const resetPasswordValidator = validate(
-  checkSchema(
-    {
-      password: passwordSchema,
-      confirm_paword: confirmPasswordSchema
-    },
-    ['body']
-  )
-)
 const nameSchema: ParamSchema = {
   notEmpty: {
     errorMessage: USERS_MESSAGES.NAME_IS_REQUIRED
@@ -120,6 +119,15 @@ const imageSchema: ParamSchema = {
     errorMessage: USERS_MESSAGES.IMAGE_URL_LENGTH_MUST_BE_FROM_1_TO_400
   }
 }
+export const resetPasswordValidator = validate(
+  checkSchema(
+    {
+      password: passwordSchema,
+      confirm_password: confirmPasswordSchema
+    },
+    ['body']
+  )
+)
 
 export const loginValidator = validate(
   checkSchema(
@@ -433,71 +441,72 @@ export const forgotpasswordvalidator = validate(
     }
   })
 )
+const forgotPasswordTokenSchema: ParamSchema = {
+  trim: true,
+  custom: {
+    options: async (value, { req }) => {
+      //nếu k truyền lên forgot_password_token thì ta sẽ throw error
+      if (!value) {
+        throw new ErrorWithStatus({
+          message: USERS_MESSAGES.FOTGOT_PASSWORD_TOKEN_IS_REQUIRED,
+          status: HTTP_STATUS.UNAUTHORIZED //401
+        })
+      }
+      //nếu có thì decode nó để lấy đc thông tin của người dùng
+      try {
+        const decoded_forgot_password_token = await verifyToken({
+          token: value,
+          secretOrPublicKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
+        })
+        //lưu decoded_forgot_password_token vào req để khi nào muốn biết ai gữi req thì dùng
+        ;(req as Request).decoded_forgot_verify_token = decoded_forgot_password_token
+        //dùng user_id trong decoded_forgot_password_token để tìm user trong database
+        //sẽ nhanh hơn là dùng forgot_password_token(value) để tìm user trong database
+        const { user_id } = decoded_forgot_password_token
+        const user = await databaService.users.findOne({
+          _id: new ObjectId(user_id)
+        })
+        //nếu k tìm đc user thì throw error
+        if (user === null) {
+          throw new ErrorWithStatus({
+            message: USERS_MESSAGES.USER_NOT_FOUND,
+            status: HTTP_STATUS.UNAUTHORIZED //401
+          })
+        }
+        //nếu forgot_password_token đã được sử dụng rồi thì throw error
+        //forgot_password_token truyền lên khác với forgot_password_token trong database
+        //nghĩa là người dùng đã sử dụng forgot_password_token này rồi
+        if (user.forgot_password_token !== value) {
+          throw new ErrorWithStatus({
+            message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID,
+            status: HTTP_STATUS.UNAUTHORIZED //401
+          })
+        }
+      } catch (error) {
+        if (error instanceof JsonWebTokenError) {
+          throw new ErrorWithStatus({
+            message: capitalize((error as JsonWebTokenError).message),
+            status: HTTP_STATUS.UNAUTHORIZED //401
+          })
+        }
+        throw error
+      }
+      return true
+    }
+  }
+}
 
 export const verifyForgotPasswordTokenValidator = validate(
   checkSchema(
     {
-      forgot_password_token: {
-        trim: true,
-        custom: {
-          options: async (value, { req }) => {
-            //nếu k truyền lên forgot_password_token thì ta sẽ throw error
-            if (!value) {
-              throw new ErrorWithStatus({
-                message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID,
-                status: HTTP_STATUS.UNAUTHORIZED //401
-              })
-            }
-            //vào messages.ts thêm  FORGOT_PASSWORD_TOKEN_IS_REQUIRED: 'Forgot password token is required'
-            //nếu có thì decode nó để lấy đc thông tin của người dùng
-            try {
-              const decoded_forgot_password_token = await verifyToken({
-                token: value,
-                secretOrPublicKey: process.env.JWT_SECRET_FORGOT_PASSWORD_TOKEN as string
-              })
-              //lưu decoded_forgot_password_token vào req để khi nào muốn biết ai gữi req thì dùng
-              ;(req as Request).decoded_forgot_verify_token = decoded_forgot_password_token
-              //vào type.d.ts thêm decoded_forgot_password_token?: TokenPayload cho Request
-              //dùng user_id trong decoded_forgot_password_token để tìm user trong database
-              //sẽ nhanh hơn là dùng forgot_password_token(value) để tìm user trong database
-              const { user_id } = decoded_forgot_password_token
-              const user = await databaService.users.findOne({
-                _id: new ObjectId(user_id)
-              })
-              //nếu k tìm đc user thì throw error
-              if (user === null) {
-                throw new ErrorWithStatus({
-                  message: USERS_MESSAGES.USER_NOT_FOUND,
-                  status: HTTP_STATUS.UNAUTHORIZED //401
-                })
-              }
-              //nếu forgot_password_token đã được sử dụng rồi thì throw error
-              //forgot_password_token truyền lên khác với forgot_password_token trong database
-              //nghĩa là người dùng đã sử dụng forgot_password_token này rồi
-              if (user.forgot_password_token !== value) {
-                throw new ErrorWithStatus({
-                  message: USERS_MESSAGES.FORGOT_PASSWORD_TOKEN_IS_INVALID,
-                  status: HTTP_STATUS.UNAUTHORIZED //401
-                })
-              }
-              //trong messages.ts thêm   INVALID_FORGOT_PASSWORD_TOKEN: 'Invalid forgot password token'
-            } catch (error) {
-              if (error instanceof JsonWebTokenError) {
-                throw new ErrorWithStatus({
-                  message: capitalize((error as JsonWebTokenError).message),
-                  status: HTTP_STATUS.UNAUTHORIZED //401
-                })
-              }
-              throw error
-            }
-            return true
-          }
-        }
-      }
+      forgot_password_token: forgotPasswordTokenSchema
     },
     ['body']
   )
 )
+
+//không nên vào database và xóa luôn forgot_password_token của account
+//vì đôi khi họ click vào link , chưa kịp đổi mk thì họ bận gì đó, họ click lại sau
 export const verifiedUserValidator = (req: Request, res: Response, next: NextFunction) => {
   //kiểm tra user đã verify hay chưa ?
   const { verify } = req.decoded_authorization as TokenPayLoad

@@ -38,3 +38,9 @@ export interface UpdateMeReqBody {
 export interface GetProfileReqParams {
   username: string
 }
+export interface ForgotPasswordReqBody {
+  email: string
+}
+export interface VerifyForgotPasswordReqBody {
+  forgot_password_token: string
+}

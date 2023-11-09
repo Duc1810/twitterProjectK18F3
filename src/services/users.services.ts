@@ -98,9 +98,11 @@ class UsersService {
       privateKey: process.env.JWT_SECRET_FORGOT_VERIFY_TOKEN as string
     })
   }
+
   private signAccessTokenAndRefreshToken({ user_id, verify }: { user_id: string; verify: UserVerifyStatus }) {
     return Promise.all([this.signAccessToken({ user_id, verify }), this.signRefreshToken({ user_id, verify })])
   }
+
   async logout(refresh_token: string) {
     await databaService.refreshTokens.deleteOne({ token: refresh_token })
     return { message: USERS_MESSAGES.LOGOUT_SUCCESS }
@@ -184,6 +186,7 @@ class UsersService {
       message: USERS_MESSAGES.CHECK_EMAIL_TORESET_PASSWORD
     }
   }
+
   async resetPassword({ user_id, password }: { user_id: string; password: string }) {
     //dựa vào user_id và tìm và cập nhật
     await databaService.users.updateOne(
@@ -202,6 +205,7 @@ class UsersService {
     )
     return { message: USERS_MESSAGES.RESET_PASSWORD_SUCCESS }
   }
+
   async getMe(user_id: string) {
     const user = await databaService.users.findOne(
       { _id: new ObjectId(user_id) },
@@ -232,7 +236,7 @@ class UsersService {
       [
         {
           $set: {
-            ...payload,
+            ..._payload,
             updated_at: '$$NOW'
           }
         }

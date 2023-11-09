@@ -10,7 +10,7 @@ import {
   resendEmailVerifyController,
   resetPasswordController,
   updateMeController,
-  vefifForgotPasswordTokenContrller
+  verifyForgotPasswordTokenController
 } from '~/controllers/users.controllers'
 import { filterMiddleware } from '~/middlewares/common.middlewares'
 import {
@@ -80,8 +80,9 @@ body: {
 usersRouter.post(
   '/verify-forgot-password',
   verifyForgotPasswordTokenValidator,
-  wrapAsync(vefifForgotPasswordTokenContrller)
+  wrapAsync(verifyForgotPasswordTokenController)
 )
+
 usersRouter.post(
   '/reset-password',
   resetPasswordValidator,

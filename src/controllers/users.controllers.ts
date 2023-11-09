@@ -5,12 +5,14 @@ import databaService from '~/services/database.services'
 import usersService from '~/services/users.services'
 import { ParamsDictionary } from 'express-serve-static-core'
 import {
+  GetProfileReqParams,
   LoginReqBody,
   LogoutReqBody,
   RegisterReqBody,
   ResetPasswordReqBody,
   TokenPayLoad,
-  UpdateMeReqBody
+  UpdateMeReqBody,
+  VerifyForgotPasswordReqBody
 } from '~/models/requests/User.request'
 import { ErrorWithStatus } from '~/models/Errors'
 import { ObjectId } from 'mongodb'
@@ -125,8 +127,16 @@ export const forgotpasswordController = async (req: Request, res: Response) => {
   //lấy user id từ req.user
   //tiến hành update lại forgot_password_token
 }
-export const vefifForgotPasswordTokenContrller = async (req: Request, res: Response) => {
-  res.json({
+
+export const verifyForgotPasswordTokenController = async (
+  req: Request<ParamsDictionary, any, VerifyForgotPasswordReqBody>,
+  res: Response
+) => {
+  //nếu đã đến bước này nghĩa là ta đã tìm có forgot_password_token hợp lệ
+  //và đã lưu vào req.decoded_forgot_password_token
+  //thông tin của user
+  //ta chỉ cần thông báo rằng token hợp lệ
+  return res.json({
     message: USERS_MESSAGES.VERIFY_FORGOT_PASSWORD_TOKEN_SUCCESS
   })
 }
