@@ -6,7 +6,7 @@ import { error } from 'console'
 import { defaultErrorHandler } from './middlewares/error.middlewares'
 const app = express()
 app.use(express.json())
-const PORT = 3000
+const PORT = 4000
 databaseService.connect()
 //chứa api liên quan tới user
 app.get('/', (req, res) => {
